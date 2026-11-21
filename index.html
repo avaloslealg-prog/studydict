@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyDict EN-ES</title>
+    <meta name="theme-color" content="#121212">
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiU3R1ZHlEaWN0IEVOLUVTIiwic2hvcnRfbmFtZSI6IlN0dWR5RGljdCIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMTIxMjEyIiwidGhlbWVfY29sb3IiOiIjMTIxMjEyIiwiaWNvbnMiOlt7InNyYyI6Imh0dHBzOi8vaWNvbnMuZ2V0Ym9vdHN0cmFwLmNvbS9pY29ucy9ib29rLWZpbGwuc3ZnIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --primary: #bb86fc;
+            --text: #e0e0e0;
+            --muted: #a0a0a0;
+            --border: #333333;
+            --danger: #cf6679;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+        h1 { font-size: 1.2rem; color: var(--primary); }
+        .help-btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 0.85rem; cursor: pointer; }
+
+        .modes { display: flex; gap: 8px; background: var(--surface); padding: 6px; border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border); }
+        .mode-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: var(--text); font-weight: 600; cursor: pointer; }
+        .mode-btn.active { background: var(--primary); color: #000; }
+
+        .search-wrap { position: relative; margin-bottom: 14px; }
+        input { width: 100%; padding: 14px 42px 14px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 1rem; outline: none; }
+        input:focus { border-color: var(--primary); }
+        .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; display: none; padding: 4px 8px; }
+
+        .status { text-align: center; color: var(--muted); padding: 14px; display: none; }
+        .results { display: flex; flex-direction: column; gap: 12px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .label { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 6px; }
+        .main-result { font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 10px; word-break: break-word; }
+
+        .audio-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .chip { background: #2a2a2a; color: var(--text); border: 1px solid #3c3c3c; border-radius: 8px; padding: 7px 12px; font-size: 0.85rem; cursor: pointer; }
+        .chip:active { background: var(--primary); color: #000; }
+
+        .alt-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 0.92rem; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px; z-index: 50; }
+        .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; max-width: 340px; width: 100%; padding: 20px; }
+        .modal-box h2 { font-size: 1.05rem; color: var(--primary); margin-bottom: 10px; }
+        .modal-box p { font-size: 0.9rem; color: var(--muted); line-height: 1.45; margin-bottom: 14px; }
+        .modal-close { width: 100%; padding: 10px; border: none; border-radius: 8px; background: var(--primary); color: #000; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>StudyDict EN ⇄ ES</h1>
+        <button class="help-btn" id="openHelp">Instalar app</button>
+    </header>
+
+    <div class="modes">
+        <button class="mode-btn active" id="modeEnEs">Inglés ➔ Español</button>
+        <button class="mode-btn" id="modeEsEn">Español ➔ Inglés</button>
+    </div>
+
+    <div class="search-wrap">
+        <input type="text" id="queryInput" placeholder="Escribe una palabra o frase (ej. onto)..." autocomplete="off">
+        <button class="clear-btn" id="clearBtn" aria-label="Limpiar">×</button>
+    </div>
+
+    <div class="status" id="statusMsg">Buscando traducción...</div>
+
+    <main class="results" id="results">
+        <div class="card" style="text-align:center; color:var(--muted); padding:32px 16px;">
+            Escribe una palabra o frase arriba para ver su significado en español o inglés.
+        </div>
+    </main>
+
+    <div class="modal" id="helpModal">
+        <div class="modal-box">
+            <h2>Instalar en Android</h2>
+            <p>1. Abre el enlace en <strong>Brave</strong> o <strong>Chrome</strong>.</p>
+            <p>2. Toca los tres puntos <code>⋮</code> arriba a la derecha.</p>
+            <p>3. Elige <strong>Instalar aplicación</strong> o <strong>Agregar a la pantalla principal</strong>.</p>
+            <button class="modal-close" id="closeHelp">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        const inputEl = document.getElementById('queryInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusMsg = document.getElementById('statusMsg');
+        const resultsEl = document.getElementById('results');
+        const modeEnEs = document.getElementById('modeEnEs');
+        const modeEsEn = document.getElementById('modeEsEn');
+        const helpModal = document.getElementById('helpModal');
+
+        let mode = 'en-es';
+        let timer = null;
+
+        function setMode(newMode) {
+            mode = newMode;
+            modeEnEs.classList.toggle('active', mode === 'en-es');
+            modeEsEn.classList.toggle('active', mode === 'es-en');
+            inputEl.placeholder = mode === 'en-es'
+                ? 'Escribe en inglés (ej. onto)...'
+                : 'Escribe en español (ej. encima de)...';
+            if (inputEl.value.trim()) runSearch(inputEl.value.trim());
+        }
+
+        modeEnEs.addEventListener('click', () => setMode('en-es'));
+        modeEsEn.addEventListener('click', () => setMode('es-en'));
+
+        inputEl.addEventListener('input', () => {
+            const val = inputEl.value.trim();
+            clearBtn.style.display = inputEl.value ? 'block' : 'none';
+            clearTimeout(timer);
+            if (val.length > 0) {
+                timer = setTimeout(() => runSearch(val), 500);
+            }
+        });
+
+        inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                clearTimeout(timer);
+                const val = inputEl.value.trim();
+                if (val) runSearch(val);
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            inputEl.value = '';
+            clearBtn.style.display = 'none';
+            resultsEl.innerHTML = '<div class="card" style="text-align:center; color:var(--muted); padding:32px 16px;">Escribe una palabra o frase arriba para ver su significado en español o inglés.</div>';
+            inputEl.focus();
+        });
+
+        async function runSearch(text) {
+            statusMsg.style.display = 'block';
+            resultsEl.innerHTML = '';
+            const pair = mode === 'en-es' ? 'en|es' : 'es|en';
+
+            try {
+                const resp = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}`);
+                const data = await resp.json();
+                statusMsg.style.display = 'none';
+
+                const mainTr = data?.responseData?.translatedText;
+                if (!mainTr) {
+                    resultsEl.innerHTML = '<div class="card">No se encontró traducción.</div>';
+                    return;
+                }
+
+                const audioTarget = mode === 'en-es' ? text : mainTr;
+                const alts = [];
+                if (Array.isArray(data.matches)) {
+                    for (const item of data.matches) {
+                        const candidate = item?.translation;
+                        if (
+                            candidate &&
+                            candidate.toLowerCase() !== mainTr.toLowerCase() &&
+                            !alts.some(a => a.toLowerCase() === candidate.toLowerCase())
+                        ) {
+                            alts.push(candidate);
+                            if (alts.length >= 3) break;
+                        }
+                    }
+                }
+
+                let html = `
+                    <div class="card">
+                        <div class="label">${mode === 'en-es' ? 'Significado / Traducción al Español' : 'Traducción al Inglés'}</div>
+                        <div class="main-result">${esc(mainTr)}</div>
+                        <div class="audio-row">
+                            <button class="chip" onclick="speak('${esc(audioTarget)}', 1.0)">🔊 Normal (EN)</button>
+                            <button class="chip" onclick="speak('${esc(audioTarget)}', 0.65)">🐢 Lento (EN)</button>
+                        </div>
+                    </div>
+                `;
+
+                if (alts.length > 0) {
+                    html += `
+                        <div class="card">
+                            <div class="label">Otras opciones / Contexto</div>
+                            <ul class="alt-list">
+                                ${alts.map(a => `<li>${esc(a)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                resultsEl.innerHTML = html;
+            } catch {
+                statusMsg.style.display = 'none';
+                resultsEl.innerHTML = '<div class="card" style="color:var(--danger);">Sin conexión o error al consultar el traductor.</div>';
+            }
+        }
+
+        function speak(phrase, rate) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(phrase);
+            u.lang = 'en-US';
+            u.rate = rate;
+            window.speechSynthesis.speak(u);
+        }
+
+        function esc(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        document.getElementById('openHelp').addEventListener('click', () => helpModal.style.display = 'flex');
+        document.getElementById('closeHelp').addEventListener('click', () => helpModal.style.display = 'none');
+        helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.style.display = 'none'; });
+    </script>
+</body>
+</html>
